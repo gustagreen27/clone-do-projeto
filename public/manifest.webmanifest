@@ -1,17 +1,20 @@
 {
-  "name": "Push Aura - Notificações de Vendas",
-  "short_name": "Push Aura",
-  "description": "Receba notificações de vendas em tempo real no seu iPhone",
+  "name": "Ghost Peek",
+  "short_name": "Ghost Peek",
+  "description": "Alertas de vendas em tempo real - Notificações premium para seu negócio",
   "id": "app.plantain7502.soybean5714",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "fullscreen"],
+  "display_override": ["standalone"],
   "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
   "categories": ["finance", "business", "productivity"],
   "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "icons": [
     { 
       "src": "/icon-192.png", 
@@ -32,19 +35,12 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [],
   "shortcuts": [
     {
-      "name": "Painel Admin",
-      "short_name": "Admin",
+      "name": "Painel de Envio",
+      "short_name": "Enviar",
       "url": "/admin",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
-    }
-  ],
-  "related_applications": [
-    {
-      "platform": "itunes",
-      "id": "app.plantain7502.soybean5714"
     }
   ]
 }
