@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Push Aura",
-    "slug": "push-aura",
+    "name": "Ghost Peek",
+    "slug": "ghost-peek",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./public/icon-512.png",
