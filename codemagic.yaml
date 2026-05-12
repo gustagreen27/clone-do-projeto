@@ -11,7 +11,7 @@ workflows:
       groups:
         - ios_credentials # Configure in Codemagic UI
       vars:
-        BUNDLE_ID: "com.pushaura.app" # Ajuste para seu bundle ID
+        BUNDLE_ID: "app.plantain7502.soybean5714"
         APP_NAME: "Push Aura"
     
     cache:

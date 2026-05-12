@@ -5,9 +5,11 @@ import { NotificationStack } from "./notification-stack";
 import { generateRandomNotification } from "@/lib/notifications";
 import { Volume2, VolumeX, Bell, Trash2, BellRing, BellOff, Settings } from "lucide-react";
 import { usePush } from "@/hooks/use-push";
+import { NotificationPermission } from "./notification-permission";
 import Link from "next/link";
 
 export function LockScreen() {
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [time, setTime] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [autoSimulate, setAutoSimulate] = useState(true);
@@ -47,6 +49,8 @@ export function LockScreen() {
 
   return (
     <div className="lock-screen relative min-h-screen w-full overflow-hidden">
+      {/* Permission Modal */}
+      <NotificationPermission onClose={() => setShowPermissionModal(false)} />
       {/* Wallpaper */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
