@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 
 // VAPID keys - in production, use environment variables
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BBps89GBV_-ipYTVq7MnP0Oh4YTEyDyuh0l--5rUIbZlMKyh6-VmRO_vX87gEegHk6QON4-UnYTgaGA6pRyOu8I'
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'woATbALiazsYbztSvsEaYedyxo_1lY_6Zfy0skEEMag'
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BEGOGX70h3pvegsaiXd4nGV-dATbuI-a-3OLjo3Wb6bSG2xyTp7sBbv76Wt-BRvzejzt8LrxASDKKjIU4LS9X2U'
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'sXyROq2zgf2xDxmFfaQxEX3HzIOxwR_4vjQY4eDbI70'
 const VAPID_EMAIL = process.env.VAPID_EMAIL || 'mailto:admin@example.com'
 
 webpush.setVapidDetails(

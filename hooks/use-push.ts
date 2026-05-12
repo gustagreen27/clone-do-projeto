@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-const VAPID_PUBLIC_KEY = 'BBps89GBV_-ipYTVq7MnP0Oh4YTEyDyuh0l--5rUIbZlMKyh6-VmRO_vX87gEegHk6QON4-UnYTgaGA6pRyOu8I'
+const VAPID_PUBLIC_KEY = 'BEGOGX70h3pvegsaiXd4nGV-dATbuI-a-3OLjo3Wb6bSG2xyTp7sBbv76Wt-BRvzejzt8LrxASDKKjIU4LS9X2U'
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
