@@ -1,10 +1,11 @@
 {
   "appId": "app.plantain7502.soybean5714",
-  "appName": "Push Aura",
-  "webDir": "out",
+  "appName": "Ghost Peek",
+  "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "iosScheme": "https"
   },
   "plugins": {
     "PushNotifications": {

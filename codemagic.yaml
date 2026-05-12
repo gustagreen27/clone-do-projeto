@@ -18,47 +18,44 @@ workflows:
       cache_paths:
         - $HOME/.npm
         - $HOME/Library/Caches/CocoaPods
-        - $CM_BUILD_DIR/capacitor-app/node_modules
-        - $CM_BUILD_DIR/capacitor-app/ios/Pods
+        - $CM_BUILD_DIR/node_modules
+        - $CM_BUILD_DIR/ios/Pods
     
     scripts:
-      # Entrar na pasta do app Capacitor
+      # Instalar dependencias na raiz
       - name: Install dependencies
         script: |
-          cd capacitor-app
           npm install
       
-      # Build do projeto Vite
+      # Build do projeto (cria pasta dist)
       - name: Build web app
         script: |
-          cd capacitor-app
           npm run build
       
       # Adicionar e sincronizar iOS
       - name: Add and sync iOS platform
         script: |
-          cd capacitor-app
-          npx cap add ios || true  # Ignora se já existe
+          npx cap add ios || true
           npx cap sync ios
       
       # Instalar CocoaPods
       - name: Install CocoaPods dependencies
         script: |
-          cd capacitor-app/ios/App
+          cd ios/App
           pod install
       
-      # Configurar code signing (requer certificados no Codemagic)
+      # Configurar code signing
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_DEVELOPMENT
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_ADHOC
           keychain add-certificates
-          xcode-project use-profiles --project capacitor-app/ios/App/App.xcodeproj
+          xcode-project use-profiles --project ios/App/App.xcodeproj
       
       # Build do projeto iOS
       - name: Build iOS app
         script: |
-          cd capacitor-app/ios/App
+          cd ios/App
           xcode-project build-ipa \
             --workspace App.xcworkspace \
             --scheme App \
@@ -66,19 +63,19 @@ workflows:
             --archive-flags="-destination 'generic/platform=iOS'"
     
     artifacts:
-      - capacitor-app/ios/App/build/ios/ipa/*.ipa
-      - capacitor-app/ios/App/build/ios/xcarchive/*.xcarchive
+      - ios/App/build/ios/ipa/*.ipa
+      - ios/App/build/ios/xcarchive/*.xcarchive
       - /tmp/xcodebuild_logs/*.log
     
     publishing:
       email:
         recipients:
-          - your-email@example.com # Ajuste para seu email
+          - gustagreen27@gmail.com
         notify:
           success: true
           failure: true
 
-  # Workflow alternativo para build sem code signing (simulador apenas)
+  # Workflow alternativo para build sem code signing
   ios-simulator-build:
     name: iOS Simulator Build (No Signing)
     max_build_duration: 45
@@ -96,34 +93,31 @@ workflows:
       cache_paths:
         - $HOME/.npm
         - $HOME/Library/Caches/CocoaPods
-        - $CM_BUILD_DIR/capacitor-app/node_modules
-        - $CM_BUILD_DIR/capacitor-app/ios/Pods
+        - $CM_BUILD_DIR/node_modules
+        - $CM_BUILD_DIR/ios/Pods
     
     scripts:
       - name: Install dependencies
         script: |
-          cd capacitor-app
           npm install
       
       - name: Build web app
         script: |
-          cd capacitor-app
           npm run build
       
       - name: Add and sync iOS platform
         script: |
-          cd capacitor-app
           npx cap add ios || true
           npx cap sync ios
       
       - name: Install CocoaPods dependencies
         script: |
-          cd capacitor-app/ios/App
+          cd ios/App
           pod install
       
       - name: Build for Simulator
         script: |
-          cd capacitor-app/ios/App
+          cd ios/App
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
@@ -133,13 +127,13 @@ workflows:
             build
     
     artifacts:
-      - capacitor-app/ios/App/build/**/*.app
+      - ios/App/build/**/*.app
       - /tmp/xcodebuild_logs/*.log
     
     publishing:
       email:
         recipients:
-          - your-email@example.com
+          - gustagreen27@gmail.com
         notify:
           success: true
           failure: true
