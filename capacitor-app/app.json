@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Ghost Peek",
+    "slug": "ghost-peek",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/icon-512.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./public/icon-512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "bundleIdentifier": "app.plantain7502.soybean5714",
+      "supportsTablet": false,
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"],
+        "NSUserNotificationsUsageDescription": "Receba notificações de vendas em tempo real"
+      }
+    },
+    "android": {
+      "package": "app.plantain7502.soybean5714",
+      "adaptiveIcon": {
+        "foregroundImage": "./public/icon-512.png",
+        "backgroundColor": "#000000"
+      }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./public/icon-512.png",
+          "color": "#10B981"
+        }
+      ]
+    ]
+  }
+}
