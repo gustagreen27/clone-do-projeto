@@ -3,13 +3,16 @@
 import { useState, useEffect } from "react";
 import { NotificationStack } from "./notification-stack";
 import { generateRandomNotification } from "@/lib/notifications";
-import { Volume2, VolumeX, Bell, Trash2 } from "lucide-react";
+import { Volume2, VolumeX, Bell, Trash2, BellRing, BellOff, Settings } from "lucide-react";
+import { usePush } from "@/hooks/use-push";
+import Link from "next/link";
 
 export function LockScreen() {
   const [time, setTime] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [autoSimulate, setAutoSimulate] = useState(true);
   const [soundOn, setSoundOn] = useState(true);
+  const { isSupported, isSubscribed, toggle, isLoading, permission } = usePush();
 
   useEffect(() => {
     function updateTime() {
@@ -93,44 +96,88 @@ export function LockScreen() {
         </div>
 
         {/* Controls */}
-        <div className="safe-area-bottom sticky bottom-0 flex items-center justify-center gap-3 bg-gradient-to-t from-black/60 to-transparent px-6 pb-8 pt-6">
-          <button
-            onClick={triggerNotification}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-md transition-colors hover:bg-white/25 active:scale-95"
-            title="Enviar notificação"
-          >
-            <Bell className="h-5 w-5 text-white" />
-          </button>
-          <button
-            onClick={() => setAutoSimulate(!autoSimulate)}
-            className={`flex h-12 items-center gap-2 rounded-full px-4 backdrop-blur-md transition-colors active:scale-95 ${
-              autoSimulate
-                ? "bg-green-500/30 text-green-300"
-                : "bg-white/15 text-white/70"
-            }`}
-          >
-            <span className="text-sm font-medium">
-              {autoSimulate ? "Auto: ON" : "Auto: OFF"}
-            </span>
-          </button>
-          <button
-            onClick={() => setSoundOn(!soundOn)}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-md transition-colors hover:bg-white/25 active:scale-95"
-            title={soundOn ? "Desativar som" : "Ativar som"}
-          >
-            {soundOn ? (
-              <Volume2 className="h-5 w-5 text-white" />
-            ) : (
-              <VolumeX className="h-5 w-5 text-white/50" />
-            )}
-          </button>
-          <button
-            onClick={clearNotifications}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-md transition-colors hover:bg-red-500/30 active:scale-95"
-            title="Limpar notificações"
-          >
-            <Trash2 className="h-5 w-5 text-white" />
-          </button>
+        <div className="safe-area-bottom sticky bottom-0 flex flex-col items-center gap-4 bg-gradient-to-t from-black/60 to-transparent px-6 pb-8 pt-6">
+          {/* Push subscription button */}
+          {isSupported && (
+            <button
+              onClick={toggle}
+              disabled={isLoading}
+              className={`flex h-12 items-center gap-2 rounded-full px-5 backdrop-blur-md transition-all active:scale-95 ${
+                isSubscribed
+                  ? "bg-green-500/30 text-green-300"
+                  : permission === 'denied'
+                  ? "bg-red-500/30 text-red-300"
+                  : "bg-orange-500/30 text-orange-300"
+              }`}
+            >
+              {isSubscribed ? (
+                <>
+                  <BellRing className="h-5 w-5" />
+                  <span className="text-sm font-medium">Push Ativo</span>
+                </>
+              ) : permission === 'denied' ? (
+                <>
+                  <BellOff className="h-5 w-5" />
+                  <span className="text-sm font-medium">Push Bloqueado</span>
+                </>
+              ) : (
+                <>
+                  <Bell className="h-5 w-5" />
+                  <span className="text-sm font-medium">
+                    {isLoading ? "Ativando..." : "Ativar Push Real"}
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+          
+          {/* Main controls */}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={triggerNotification}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-md transition-colors hover:bg-white/25 active:scale-95"
+              title="Enviar notificação local"
+            >
+              <Bell className="h-5 w-5 text-white" />
+            </button>
+            <button
+              onClick={() => setAutoSimulate(!autoSimulate)}
+              className={`flex h-12 items-center gap-2 rounded-full px-4 backdrop-blur-md transition-colors active:scale-95 ${
+                autoSimulate
+                  ? "bg-green-500/30 text-green-300"
+                  : "bg-white/15 text-white/70"
+              }`}
+            >
+              <span className="text-sm font-medium">
+                {autoSimulate ? "Auto: ON" : "Auto: OFF"}
+              </span>
+            </button>
+            <button
+              onClick={() => setSoundOn(!soundOn)}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-md transition-colors hover:bg-white/25 active:scale-95"
+              title={soundOn ? "Desativar som" : "Ativar som"}
+            >
+              {soundOn ? (
+                <Volume2 className="h-5 w-5 text-white" />
+              ) : (
+                <VolumeX className="h-5 w-5 text-white/50" />
+              )}
+            </button>
+            <button
+              onClick={clearNotifications}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-md transition-colors hover:bg-red-500/30 active:scale-95"
+              title="Limpar notificações"
+            >
+              <Trash2 className="h-5 w-5 text-white" />
+            </button>
+            <Link
+              href="/admin"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-md transition-colors hover:bg-white/25 active:scale-95"
+              title="Painel Admin"
+            >
+              <Settings className="h-5 w-5 text-white" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>
