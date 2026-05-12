@@ -8,11 +8,13 @@ workflows:
       xcode: latest
       node: 20
       cocoapods: default
-      groups:
-        - ios_credentials # Configure in Codemagic UI
       vars:
         BUNDLE_ID: "app.plantain7502.soybean5714"
         APP_NAME: "Ghost Peek"
+    
+    # iOS Code Signing configured in Codemagic UI
+    # Certificate: iPhone Distribution: Hui Yang (3P88EQ69T9)
+    # Provisioning Profile: Hotmart (ad_hoc)
     
     cache:
       cache_paths:
@@ -22,37 +24,53 @@ workflows:
         - $CM_BUILD_DIR/ios/Pods
     
     scripts:
-      # Instalar dependencias na raiz
+      # Install dependencies
       - name: Install dependencies
         script: |
           npm install
       
-      # Build do projeto (cria pasta dist)
+      # Build web app (creates dist folder)
       - name: Build web app
         script: |
           npm run build
       
-      # Adicionar e sincronizar iOS
+      # Add and sync iOS platform
       - name: Add and sync iOS platform
         script: |
           npx cap add ios || true
           npx cap sync ios
       
-      # Instalar CocoaPods
+      # Update iOS project Bundle ID
+      - name: Update Bundle ID
+        script: |
+          cd ios/App
+          # Update Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" App/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" App/Info.plist || true
+          # Update project.pbxproj - replace default bundle ID
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = io.ionic.starter;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = \"io.ionic.starter\";/PRODUCT_BUNDLE_IDENTIFIER = \"$BUNDLE_ID\";/g" App.xcodeproj/project.pbxproj
+      
+      # Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App
           pod install
       
-      # Configurar code signing
+      # Set up keychain and apply code signing
       - name: Set up code signing
         script: |
+          # Initialize keychain for code signing
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_ADHOC
+          
+          # Add certificates from Codemagic UI configuration
           keychain add-certificates
+          
+          # Apply provisioning profiles to the Xcode project
+          # This uses the profiles configured in Codemagic UI
           xcode-project use-profiles --project ios/App/App.xcodeproj
       
-      # Build do projeto iOS
+      # Build iOS app
       - name: Build iOS app
         script: |
           cd ios/App
@@ -75,7 +93,7 @@ workflows:
           success: true
           failure: true
 
-  # Workflow alternativo para build sem code signing
+  # Simulator build (no signing required) - for testing
   ios-simulator-build:
     name: iOS Simulator Build (No Signing)
     max_build_duration: 45
@@ -89,28 +107,19 @@ workflows:
         BUNDLE_ID: "app.plantain7502.soybean5714"
         APP_NAME: "Ghost Peek"
     
-    cache:
-      cache_paths:
-        - $HOME/.npm
-        - $HOME/Library/Caches/CocoaPods
-        - $CM_BUILD_DIR/node_modules
-        - $CM_BUILD_DIR/ios/Pods
-    
     scripts:
       - name: Install dependencies
-        script: |
-          npm install
+        script: npm install
       
       - name: Build web app
-        script: |
-          npm run build
+        script: npm run build
       
       - name: Add and sync iOS platform
         script: |
           npx cap add ios || true
           npx cap sync ios
       
-      - name: Install CocoaPods dependencies
+      - name: Install CocoaPods
         script: |
           cd ios/App
           pod install
@@ -122,13 +131,13 @@ workflows:
             -workspace App.xcworkspace \
             -scheme App \
             -configuration Debug \
+            -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
             build
     
     artifacts:
       - ios/App/build/**/*.app
-      - /tmp/xcodebuild_logs/*.log
     
     publishing:
       email:
