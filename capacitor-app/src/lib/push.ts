@@ -155,5 +155,11 @@ export async function checkPushPermission(): Promise<'granted' | 'denied' | 'pro
   }
   
   const result = await PushNotifications.checkPermissions()
-  return result.receive
+  
+  // Map Capacitor's PermissionState to our expected types
+  // 'prompt-with-rationale' is treated as 'prompt'
+  const state = result.receive
+  if (state === 'granted') return 'granted'
+  if (state === 'denied') return 'denied'
+  return 'prompt'
 }
