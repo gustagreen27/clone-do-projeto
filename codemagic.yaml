@@ -8,14 +8,13 @@ workflows:
       xcode: latest
       node: 20
       cocoapods: default
-      groups:
-        - ios_credentials # Configure in Codemagic UI with your .p12 and .mobileprovision
       vars:
         BUNDLE_ID: "app.plantain7502.soybean5714"
         APP_NAME: "Ghost Peek"
-        # These will be set by Codemagic when you upload credentials
-        # CM_CERTIFICATE: from ios_credentials group
-        # CM_PROVISIONING_PROFILE: from ios_credentials group
+    
+    # iOS Code Signing configured in Codemagic UI
+    # Certificate: iPhone Distribution: Hui Yang (3P88EQ69T9)
+    # Provisioning Profile: Hotmart (ad_hoc)
     
     cache:
       cache_paths:
@@ -46,10 +45,11 @@ workflows:
         script: |
           cd ios/App
           # Update Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" App/Info.plist
-          # Update project.pbxproj
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" App/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" App/Info.plist || true
+          # Update project.pbxproj - replace default bundle ID
           sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = io.ionic.starter;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = \"io.ionic.starter\";/PRODUCT_BUNDLE_IDENTIFIER = \"$BUNDLE_ID\";/g" App.xcodeproj/project.pbxproj
       
       # Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
@@ -57,24 +57,17 @@ workflows:
           cd ios/App
           pod install
       
-      # Set up keychain and certificates
+      # Set up keychain and apply code signing
       - name: Set up code signing
         script: |
-          # Initialize keychain
+          # Initialize keychain for code signing
           keychain initialize
           
-          # If using App Store Connect API (recommended)
-          # This fetches signing files automatically
-          if [ -n "$APP_STORE_CONNECT_KEY_IDENTIFIER" ]; then
-            app-store-connect fetch-signing-files "$BUNDLE_ID" \
-              --type IOS_APP_ADHOC \
-              --create
-          fi
-          
-          # Add certificates to keychain
+          # Add certificates from Codemagic UI configuration
           keychain add-certificates
           
-          # Apply profiles to Xcode project
+          # Apply provisioning profiles to the Xcode project
+          # This uses the profiles configured in Codemagic UI
           xcode-project use-profiles --project ios/App/App.xcodeproj
       
       # Build iOS app
@@ -84,7 +77,8 @@ workflows:
           xcode-project build-ipa \
             --workspace App.xcworkspace \
             --scheme App \
-            --config Release
+            --config Release \
+            --archive-flags="-destination 'generic/platform=iOS'"
     
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
@@ -99,96 +93,7 @@ workflows:
           success: true
           failure: true
 
-  # Alternative workflow using manual .p12 and .mobileprovision files
-  ios-manual-signing:
-    name: iOS Manual Signing Build
-    max_build_duration: 60
-    instance_type: mac_mini_m2
-    
-    environment:
-      xcode: latest
-      node: 20
-      cocoapods: default
-      groups:
-        - ios_credentials
-      vars:
-        BUNDLE_ID: "app.plantain7502.soybean5714"
-        APP_NAME: "Ghost Peek"
-    
-    cache:
-      cache_paths:
-        - $HOME/.npm
-        - $HOME/Library/Caches/CocoaPods
-    
-    scripts:
-      - name: Install dependencies
-        script: npm install
-      
-      - name: Build web app
-        script: npm run build
-      
-      - name: Add and sync iOS platform
-        script: |
-          npx cap add ios || true
-          npx cap sync ios
-      
-      - name: Update Bundle ID in Xcode project
-        script: |
-          cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" App/Info.plist
-          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = io.ionic.starter;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
-      
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install
-      
-      - name: Set up manual code signing
-        script: |
-          # Initialize keychain
-          keychain initialize
-          
-          # Add your .p12 certificate
-          # The CM_CERTIFICATE and CM_CERTIFICATE_PASSWORD are set in Codemagic UI
-          keychain add-certificates
-          
-          # Install provisioning profile
-          # CM_PROVISIONING_PROFILE is set in Codemagic UI
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          
-          # Find and copy provisioning profile
-          PROFILE_PATH=$(find "$CM_BUILD_DIR" -name "*.mobileprovision" -type f | head -1)
-          if [ -n "$PROFILE_PATH" ]; then
-            PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(/usr/bin/security cms -D -i "$PROFILE_PATH"))
-            cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/$PROFILE_UUID.mobileprovision
-          fi
-          
-          # Use profiles in Xcode project
-          xcode-project use-profiles --project ios/App/App.xcodeproj
-      
-      - name: Build IPA
-        script: |
-          cd ios/App
-          xcode-project build-ipa \
-            --workspace App.xcworkspace \
-            --scheme App \
-            --config Release
-    
-    artifacts:
-      - ios/App/build/ios/ipa/*.ipa
-      - ios/App/build/ios/xcarchive/*.xcarchive
-      - /tmp/xcodebuild_logs/*.log
-    
-    publishing:
-      email:
-        recipients:
-          - gustagreen27@gmail.com
-        notify:
-          success: true
-          failure: true
-
-  # Simulator build (no signing required)
+  # Simulator build (no signing required) - for testing
   ios-simulator-build:
     name: iOS Simulator Build (No Signing)
     max_build_duration: 45
