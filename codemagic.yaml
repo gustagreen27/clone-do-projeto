@@ -11,10 +11,9 @@ workflows:
       vars:
         BUNDLE_ID: "app.plantain7502.soybean5714"
         APP_NAME: "Ghost Peek"
-    
-    # iOS Code Signing configured in Codemagic UI
-    # Certificate: iPhone Distribution: Hui Yang (3P88EQ69T9)
-    # Provisioning Profile: Hotmart (ad_hoc)
+        TEAM_ID: "3P88EQ69T9"
+        PROVISIONING_PROFILE_NAME: "Hotmart"
+        CODE_SIGN_IDENTITY: "iPhone Distribution"
     
     cache:
       cache_paths:
@@ -40,16 +39,42 @@ workflows:
           npx cap add ios || true
           npx cap sync ios
       
-      # Update iOS project Bundle ID
-      - name: Update Bundle ID
+      # Force Manual Code Signing in Xcode Project
+      - name: Configure Manual Code Signing
         script: |
           cd ios/App
+          
+          echo "=== Forcing Manual Code Signing ==="
+          
+          # Path to project.pbxproj
+          PBXPROJ="App.xcodeproj/project.pbxproj"
+          
+          # Replace ALL occurrences of automatic signing with manual
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' "$PBXPROJ"
+          
+          # Replace default Bundle ID with our Bundle ID
+          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = io\.ionic\.starter;/PRODUCT_BUNDLE_IDENTIFIER = '"$BUNDLE_ID"';/g' "$PBXPROJ"
+          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = "io.ionic.starter";/PRODUCT_BUNDLE_IDENTIFIER = "'"$BUNDLE_ID"'";/g' "$PBXPROJ"
+          
+          # Set Development Team
+          sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = '"$TEAM_ID"';/g' "$PBXPROJ"
+          
+          # Add PROVISIONING_PROFILE_SPECIFIER if not present
+          sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Manual;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "'"$PROVISIONING_PROFILE_NAME"'";/g' "$PBXPROJ"
+          
+          # Set CODE_SIGN_IDENTITY
+          sed -i '' 's/CODE_SIGN_IDENTITY = ".*";/CODE_SIGN_IDENTITY = "'"$CODE_SIGN_IDENTITY"'";/g' "$PBXPROJ"
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = ".*";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "'"$CODE_SIGN_IDENTITY"'";/g' "$PBXPROJ"
+          
           # Update Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" App/Info.plist || true
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" App/Info.plist || true
-          # Update project.pbxproj - replace default bundle ID
-          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = io.ionic.starter;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" App.xcodeproj/project.pbxproj
-          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = \"io.ionic.starter\";/PRODUCT_BUNDLE_IDENTIFIER = \"$BUNDLE_ID\";/g" App.xcodeproj/project.pbxproj
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" App/Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" App/Info.plist 2>/dev/null || true
+          
+          echo "=== Code Signing Configuration Complete ==="
+          echo "Bundle ID: $BUNDLE_ID"
+          echo "Team ID: $TEAM_ID"
+          echo "Provisioning Profile: $PROVISIONING_PROFILE_NAME"
+          echo "Code Sign Identity: $CODE_SIGN_IDENTITY"
       
       # Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
@@ -67,18 +92,69 @@ workflows:
           keychain add-certificates
           
           # Apply provisioning profiles to the Xcode project
-          # This uses the profiles configured in Codemagic UI
           xcode-project use-profiles --project ios/App/App.xcodeproj
       
-      # Build iOS app
+      # Build iOS app with explicit signing settings
       - name: Build iOS app
         script: |
           cd ios/App
-          xcode-project build-ipa \
-            --workspace App.xcworkspace \
-            --scheme App \
-            --config Release \
-            --archive-flags="-destination 'generic/platform=iOS'"
+          
+          # Get the provisioning profile UUID
+          PROFILE_PATH=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision 2>/dev/null | head -1)
+          
+          if [ -n "$PROFILE_PATH" ]; then
+            PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(/usr/bin/security cms -D -i "$PROFILE_PATH"))
+            echo "Using Provisioning Profile UUID: $PROFILE_UUID"
+          fi
+          
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/ios/xcarchive/App.xcarchive \
+            archive \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="$CODE_SIGN_IDENTITY" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_NAME" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+      
+      # Export IPA
+      - name: Export IPA
+        script: |
+          cd ios/App
+          
+          # Create ExportOptions.plist for ad-hoc distribution
+          cat > ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>ad-hoc</string>
+              <key>teamID</key>
+              <string>$TEAM_ID</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>$BUNDLE_ID</key>
+                  <string>$PROVISIONING_PROFILE_NAME</string>
+              </dict>
+              <key>compileBitcode</key>
+              <false/>
+              <key>stripSwiftSymbols</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          
+          xcodebuild -exportArchive \
+            -archivePath build/ios/xcarchive/App.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist ExportOptions.plist
     
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
