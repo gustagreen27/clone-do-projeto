@@ -1,0 +1,151 @@
+workflows:
+  ios-capacitor-build:
+    name: iOS Capacitor Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    
+    environment:
+      xcode: latest
+      node: 20
+      cocoapods: default
+      groups:
+        - ios_credentials # Configure in Codemagic UI
+      vars:
+        BUNDLE_ID: "com.pushaura.app" # Ajuste para seu bundle ID
+        APP_NAME: "Push Aura"
+    
+    cache:
+      cache_paths:
+        - $HOME/.npm
+        - $HOME/Library/Caches/CocoaPods
+        - $CM_BUILD_DIR/node_modules
+        - $CM_BUILD_DIR/capacitor-wrapper/node_modules
+        - $CM_BUILD_DIR/capacitor-wrapper/ios/Pods
+    
+    scripts:
+      # Instalar dependências do projeto principal
+      - name: Install root dependencies
+        script: |
+          npm install
+      
+      # Build do projeto TanStack/Vite
+      - name: Build web app
+        script: |
+          npm run build
+      
+      # Setup do Capacitor wrapper
+      - name: Setup Capacitor wrapper
+        script: |
+          cd capacitor-wrapper
+          npm install
+      
+      # Adicionar e sincronizar iOS
+      - name: Add and sync iOS platform
+        script: |
+          cd capacitor-wrapper
+          npx cap add ios || true  # Ignora se já existe
+          npx cap sync ios
+      
+      # Instalar CocoaPods
+      - name: Install CocoaPods dependencies
+        script: |
+          cd capacitor-wrapper/ios/App
+          pod install
+      
+      # Configurar code signing (requer certificados no Codemagic)
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_DEVELOPMENT
+          keychain add-certificates
+          xcode-project use-profiles --project capacitor-wrapper/ios/App/App.xcodeproj
+      
+      # Build do projeto iOS
+      - name: Build iOS app
+        script: |
+          cd capacitor-wrapper/ios/App
+          xcode-project build-ipa \
+            --workspace App.xcworkspace \
+            --scheme App \
+            --config Release \
+            --archive-flags="-destination 'generic/platform=iOS'"
+    
+    artifacts:
+      - capacitor-wrapper/ios/App/build/ios/ipa/*.ipa
+      - capacitor-wrapper/ios/App/build/ios/xcarchive/*.xcarchive
+      - /tmp/xcodebuild_logs/*.log
+    
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com # Ajuste para seu email
+        notify:
+          success: true
+          failure: true
+
+  # Workflow alternativo para build sem code signing (simulador apenas)
+  ios-simulator-build:
+    name: iOS Simulator Build (No Signing)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    
+    environment:
+      xcode: latest
+      node: 20
+      cocoapods: default
+    
+    cache:
+      cache_paths:
+        - $HOME/.npm
+        - $HOME/Library/Caches/CocoaPods
+        - $CM_BUILD_DIR/node_modules
+        - $CM_BUILD_DIR/capacitor-wrapper/node_modules
+        - $CM_BUILD_DIR/capacitor-wrapper/ios/Pods
+    
+    scripts:
+      - name: Install root dependencies
+        script: |
+          npm install
+      
+      - name: Build web app
+        script: |
+          npm run build
+      
+      - name: Setup Capacitor wrapper
+        script: |
+          cd capacitor-wrapper
+          npm install
+      
+      - name: Add and sync iOS platform
+        script: |
+          cd capacitor-wrapper
+          npx cap add ios || true
+          npx cap sync ios
+      
+      - name: Install CocoaPods dependencies
+        script: |
+          cd capacitor-wrapper/ios/App
+          pod install
+      
+      - name: Build for Simulator
+        script: |
+          cd capacitor-wrapper/ios/App
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+            -derivedDataPath build \
+            build
+    
+    artifacts:
+      - capacitor-wrapper/ios/App/build/**/*.app
+      - /tmp/xcodebuild_logs/*.log
+    
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com
+        notify:
+          success: true
+          failure: true
