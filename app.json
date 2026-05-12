@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Push Aura",
+    "slug": "push-aura",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/icon-512.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./public/icon-512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.plantain7502.soybean5714",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app does not use the camera.",
+        "UIBackgroundModes": ["remote-notification"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/icon-512.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "app.plantain7502.soybean5714"
+    },
+    "web": {
+      "favicon": "./public/icon-512.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./public/icon-512.png",
+          "color": "#000000"
+        }
+      ]
+    ],
+    "notification": {
+      "icon": "./public/icon-512.png",
+      "color": "#22c55e",
+      "iosDisplayInForeground": true
+    }
+  }
+}

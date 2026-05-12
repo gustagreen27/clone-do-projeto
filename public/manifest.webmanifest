@@ -1,14 +1,50 @@
 {
   "name": "Push Aura - Notificações de Vendas",
   "short_name": "Push Aura",
-  "description": "Notificações de vendas em tempo real estilo iOS",
+  "description": "Receba notificações de vendas em tempo real no seu iPhone",
+  "id": "app.plantain7502.soybean5714",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
   "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "categories": ["finance", "business", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { 
+      "src": "/icon-192.png", 
+      "sizes": "192x192", 
+      "type": "image/png",
+      "purpose": "any"
+    },
+    { 
+      "src": "/icon-512.png", 
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "any"
+    },
+    { 
+      "src": "/icon-512.png", 
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Painel Admin",
+      "short_name": "Admin",
+      "url": "/admin",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "itunes",
+      "id": "app.plantain7502.soybean5714"
+    }
   ]
 }
