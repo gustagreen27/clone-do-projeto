@@ -1,6 +1,6 @@
 workflows:
   ios-capacitor-build:
-    name: iOS Capacitor Build
+    name: iOS Capacitor Build - Ghost Peek
     max_build_duration: 60
     instance_type: mac_mini_m2
     
@@ -12,44 +12,39 @@ workflows:
         - ios_credentials # Configure in Codemagic UI
       vars:
         BUNDLE_ID: "app.plantain7502.soybean5714"
-        APP_NAME: "Push Aura"
+        APP_NAME: "Ghost Peek"
     
     cache:
       cache_paths:
         - $HOME/.npm
         - $HOME/Library/Caches/CocoaPods
-        - $CM_BUILD_DIR/node_modules
-        - $CM_BUILD_DIR/capacitor-wrapper/node_modules
-        - $CM_BUILD_DIR/capacitor-wrapper/ios/Pods
+        - $CM_BUILD_DIR/capacitor-app/node_modules
+        - $CM_BUILD_DIR/capacitor-app/ios/Pods
     
     scripts:
-      # Instalar dependências do projeto principal
-      - name: Install root dependencies
+      # Entrar na pasta do app Capacitor
+      - name: Install dependencies
         script: |
+          cd capacitor-app
           npm install
       
-      # Build do projeto TanStack/Vite
+      # Build do projeto Vite
       - name: Build web app
         script: |
+          cd capacitor-app
           npm run build
-      
-      # Setup do Capacitor wrapper
-      - name: Setup Capacitor wrapper
-        script: |
-          cd capacitor-wrapper
-          npm install
       
       # Adicionar e sincronizar iOS
       - name: Add and sync iOS platform
         script: |
-          cd capacitor-wrapper
+          cd capacitor-app
           npx cap add ios || true  # Ignora se já existe
           npx cap sync ios
       
       # Instalar CocoaPods
       - name: Install CocoaPods dependencies
         script: |
-          cd capacitor-wrapper/ios/App
+          cd capacitor-app/ios/App
           pod install
       
       # Configurar code signing (requer certificados no Codemagic)
@@ -58,12 +53,12 @@ workflows:
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_DEVELOPMENT
           keychain add-certificates
-          xcode-project use-profiles --project capacitor-wrapper/ios/App/App.xcodeproj
+          xcode-project use-profiles --project capacitor-app/ios/App/App.xcodeproj
       
       # Build do projeto iOS
       - name: Build iOS app
         script: |
-          cd capacitor-wrapper/ios/App
+          cd capacitor-app/ios/App
           xcode-project build-ipa \
             --workspace App.xcworkspace \
             --scheme App \
@@ -71,8 +66,8 @@ workflows:
             --archive-flags="-destination 'generic/platform=iOS'"
     
     artifacts:
-      - capacitor-wrapper/ios/App/build/ios/ipa/*.ipa
-      - capacitor-wrapper/ios/App/build/ios/xcarchive/*.xcarchive
+      - capacitor-app/ios/App/build/ios/ipa/*.ipa
+      - capacitor-app/ios/App/build/ios/xcarchive/*.xcarchive
       - /tmp/xcodebuild_logs/*.log
     
     publishing:
@@ -93,43 +88,42 @@ workflows:
       xcode: latest
       node: 20
       cocoapods: default
+      vars:
+        BUNDLE_ID: "app.plantain7502.soybean5714"
+        APP_NAME: "Ghost Peek"
     
     cache:
       cache_paths:
         - $HOME/.npm
         - $HOME/Library/Caches/CocoaPods
-        - $CM_BUILD_DIR/node_modules
-        - $CM_BUILD_DIR/capacitor-wrapper/node_modules
-        - $CM_BUILD_DIR/capacitor-wrapper/ios/Pods
+        - $CM_BUILD_DIR/capacitor-app/node_modules
+        - $CM_BUILD_DIR/capacitor-app/ios/Pods
     
     scripts:
-      - name: Install root dependencies
+      - name: Install dependencies
         script: |
+          cd capacitor-app
           npm install
       
       - name: Build web app
         script: |
+          cd capacitor-app
           npm run build
-      
-      - name: Setup Capacitor wrapper
-        script: |
-          cd capacitor-wrapper
-          npm install
       
       - name: Add and sync iOS platform
         script: |
-          cd capacitor-wrapper
+          cd capacitor-app
           npx cap add ios || true
           npx cap sync ios
       
       - name: Install CocoaPods dependencies
         script: |
-          cd capacitor-wrapper/ios/App
+          cd capacitor-app/ios/App
           pod install
       
       - name: Build for Simulator
         script: |
-          cd capacitor-wrapper/ios/App
+          cd capacitor-app/ios/App
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
@@ -139,7 +133,7 @@ workflows:
             build
     
     artifacts:
-      - capacitor-wrapper/ios/App/build/**/*.app
+      - capacitor-app/ios/App/build/**/*.app
       - /tmp/xcodebuild_logs/*.log
     
     publishing:
