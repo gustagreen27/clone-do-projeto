@@ -3,18 +3,16 @@
 import { useState, useEffect } from "react";
 import { NotificationStack } from "./notification-stack";
 import { generateRandomNotification } from "@/lib/notifications";
-import { Volume2, VolumeX, Bell, Trash2, BellRing, BellOff, Settings } from "lucide-react";
-import { usePush } from "@/hooks/use-push";
-import { NotificationPermission } from "./notification-permission";
+import { Volume2, VolumeX, Bell, Trash2, Settings } from "lucide-react";
+import { EnableAlertsButton } from "./enable-alerts-button";
+import { IOSInstallBanner } from "./ios-install-banner";
 import Link from "next/link";
 
 export function LockScreen() {
-  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [time, setTime] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [autoSimulate, setAutoSimulate] = useState(true);
   const [soundOn, setSoundOn] = useState(true);
-  const { isSupported, isSubscribed, toggle, isLoading, permission } = usePush();
 
   useEffect(() => {
     function updateTime() {
@@ -49,8 +47,9 @@ export function LockScreen() {
 
   return (
     <div className="lock-screen relative min-h-screen w-full overflow-hidden">
-      {/* Permission Modal */}
-      <NotificationPermission onClose={() => setShowPermissionModal(false)} />
+      {/* iOS Safari Install Banner */}
+      <IOSInstallBanner />
+      
       {/* Wallpaper */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -101,39 +100,8 @@ export function LockScreen() {
 
         {/* Controls */}
         <div className="safe-area-bottom sticky bottom-0 flex flex-col items-center gap-4 bg-gradient-to-t from-black/60 to-transparent px-6 pb-8 pt-6">
-          {/* Push subscription button */}
-          {isSupported && (
-            <button
-              onClick={toggle}
-              disabled={isLoading}
-              className={`flex h-12 items-center gap-2 rounded-full px-5 backdrop-blur-md transition-all active:scale-95 ${
-                isSubscribed
-                  ? "bg-green-500/30 text-green-300"
-                  : permission === 'denied'
-                  ? "bg-red-500/30 text-red-300"
-                  : "bg-orange-500/30 text-orange-300"
-              }`}
-            >
-              {isSubscribed ? (
-                <>
-                  <BellRing className="h-5 w-5" />
-                  <span className="text-sm font-medium">Push Ativo</span>
-                </>
-              ) : permission === 'denied' ? (
-                <>
-                  <BellOff className="h-5 w-5" />
-                  <span className="text-sm font-medium">Push Bloqueado</span>
-                </>
-              ) : (
-                <>
-                  <Bell className="h-5 w-5" />
-                  <span className="text-sm font-medium">
-                    {isLoading ? "Ativando..." : "Ativar Push Real"}
-                  </span>
-                </>
-              )}
-            </button>
-          )}
+          {/* Enable Alerts Button - Only shows when appropriate */}
+          <EnableAlertsButton />
           
           {/* Main controls */}
           <div className="flex items-center justify-center gap-3">
